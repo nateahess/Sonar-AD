@@ -1,6 +1,6 @@
 # Sonar-AD
 
-![Sonar-AD Logo](readme-resources/sonar-logo.jpeg)
+![Sonar-AD Logo](readme-resources/sonar-logo.JPG)
 
 > Beginning stages 
 
