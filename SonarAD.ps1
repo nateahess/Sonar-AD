@@ -206,6 +206,28 @@ try {
         $metrics.StaleAccountDetails = @()
     }
 
+    # Get accounts with PasswordNotRequired flag set to true
+    Write-Host "  - Identifying accounts with PasswordNotRequired flag..." -ForegroundColor Gray
+    $passwordNotRequiredDetails = @()
+    try {
+        $passwordNotRequiredUsers = Get-ADUser -Filter { Enabled -eq $true -and PasswordNotRequired -eq $true } -Properties DisplayName, Name, SamAccountName, Enabled, PasswordNotRequired -ErrorAction Stop
+        
+        foreach ($user in $passwordNotRequiredUsers) {
+            $passwordNotRequiredDetails += @{
+                SamAccountName = $user.SamAccountName
+                DisplayName    = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
+                Name           = $user.Name
+            }
+        }
+        
+        $metrics.PasswordNotRequiredAccountsCount   = $passwordNotRequiredDetails.Count
+        $metrics.PasswordNotRequiredAccountDetails = $passwordNotRequiredDetails
+    } catch {
+        Write-Warning "Could not retrieve PasswordNotRequired accounts: $($_.Exception.Message)"
+        $metrics.PasswordNotRequiredAccountsCount   = 0
+        $metrics.PasswordNotRequiredAccountDetails = @()
+    }
+
     # Get domain information for the report
     $domainInfo = Get-ADDomain
     $metrics.DomainName = $domainInfo.DNSRoot
@@ -234,6 +256,17 @@ if ([string]::IsNullOrWhiteSpace($staleAccountsJsonRaw)) {
 # Use base64 encoding to avoid escaping issues when embedding in HTML
 $staleAccountsJsonBytes = [System.Text.Encoding]::UTF8.GetBytes($staleAccountsJsonRaw)
 $staleAccountsJsonBase64 = [Convert]::ToBase64String($staleAccountsJsonBytes)
+
+# Convert PasswordNotRequired Account details to JSON for embedding in HTML
+if (-not $metrics.PasswordNotRequiredAccountDetails) {
+    $metrics.PasswordNotRequiredAccountDetails = @()
+}
+$passwordNotRequiredJsonRaw = $metrics.PasswordNotRequiredAccountDetails | ConvertTo-Json -Compress -Depth 10
+if ([string]::IsNullOrWhiteSpace($passwordNotRequiredJsonRaw)) {
+    $passwordNotRequiredJsonRaw = "[]"
+}
+$passwordNotRequiredJsonBytes  = [System.Text.Encoding]::UTF8.GetBytes($passwordNotRequiredJsonRaw)
+$passwordNotRequiredJsonBase64 = [Convert]::ToBase64String($passwordNotRequiredJsonBytes)
 
 # Generate HTML Report
 Write-Host "Generating HTML report..." -ForegroundColor Cyan
@@ -387,8 +420,21 @@ $htmlContent = @"
         .stale-accounts-section .metric-value {
             color: #fdb4b4;
         }
+
+        .password-not-required-section {
+            background: #222222;
+            border-left-color: #17a2b8;
+        }
+
+        .password-not-required-section .metric-card {
+            border-top-color: #17a2b8;
+        }
+
+        .password-not-required-section .metric-value {
+            color: #c0f6ff;
+        }
         
-        .tier0-card, .stale-card {
+        .tier0-card, .stale-card, .password-card {
             cursor: pointer;
         }
         
@@ -398,6 +444,10 @@ $htmlContent = @"
         
         .stale-card:hover {
             background: #3f3e3e;
+        }
+        
+        .password-card:hover {
+            background: #3a4446;
         }
         
         .modal {
@@ -645,6 +695,17 @@ $htmlContent = @"
                     </div>
                 </div>
             </div>
+
+            <div class="info-section password-not-required-section">
+                <h2>Accounts with Password Not Required</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card password-card" onclick="showPasswordNotRequiredModal()">
+                        <div class="metric-label">PasswordNotRequired = True (Enabled Users)</div>
+                        <div class="metric-value">$($metrics.PasswordNotRequiredAccountsCount)</div>
+                        <div style="font-size: 0.8em; color: #707070ff; margin-top: 10px; opacity: 0.8;">Click to view details</div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="footer">
@@ -677,6 +738,19 @@ $htmlContent = @"
             </div>
         </div>
     </div>
+
+    <!-- Modal for Password Not Required Accounts -->
+    <div id="passwordNotRequiredModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                <h2 id="passwordNotRequiredModalTitle">Accounts with Password Not Required</h2>
+                <span class="close" onclick="closePasswordNotRequiredModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <ul id="passwordNotRequiredList" class="user-list"></ul>
+            </div>
+        </div>
+    </div>
     
     <script>
         // Tier 0 user data embedded from PowerShell
@@ -700,6 +774,19 @@ $htmlContent = @"
         } catch (e) {
             console.error('Error parsing staleAccounts:', e);
             staleAccounts = [];
+        }
+
+        // PasswordNotRequired account data embedded from PowerShell (base64 encoded)
+        let passwordNotRequiredAccounts = [];
+        try {
+            const passwordNotRequiredJsonBase64 = '$passwordNotRequiredJsonBase64';
+            if (passwordNotRequiredJsonBase64 && passwordNotRequiredJsonBase64.trim() !== '') {
+                const passwordNotRequiredJson = atob(passwordNotRequiredJsonBase64);
+                passwordNotRequiredAccounts = JSON.parse(passwordNotRequiredJson);
+            }
+        } catch (e) {
+            console.error('Error parsing passwordNotRequiredAccounts:', e);
+            passwordNotRequiredAccounts = [];
         }
         
         function showTier0Modal(filter) {
@@ -830,6 +917,49 @@ $htmlContent = @"
         function closeStaleAccountsModal() {
             document.getElementById('staleAccountsModal').style.display = 'none';
         }
+
+        function showPasswordNotRequiredModal() {
+            const modal = document.getElementById('passwordNotRequiredModal');
+            const list = document.getElementById('passwordNotRequiredList');
+
+            if (!Array.isArray(passwordNotRequiredAccounts)) {
+                console.error('passwordNotRequiredAccounts is not properly initialized');
+                passwordNotRequiredAccounts = [];
+            }
+
+            const sortedAccounts = passwordNotRequiredAccounts.slice().sort((a, b) => {
+                const nameA = (a.DisplayName || a.Name || '').toLowerCase();
+                const nameB = (b.DisplayName || b.Name || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+
+            list.innerHTML = '';
+
+            if (sortedAccounts.length === 0) {
+                list.innerHTML = '<li style="text-align: center; padding: 20px; color: #666;">No accounts found.</li>';
+            } else {
+                sortedAccounts.forEach(account => {
+                    const li = document.createElement('li');
+                    li.className = 'user-item';
+
+                    li.innerHTML =
+                        '<div class="user-name">' +
+                            escapeHtml(account.DisplayName || account.Name || 'N/A') +
+                        '</div>' +
+                        '<div class="user-details">' +
+                            '<span><strong>Account:</strong> ' + escapeHtml(account.SamAccountName || 'N/A') + '</span>' +
+                        '</div>';
+
+                    list.appendChild(li);
+                });
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function closePasswordNotRequiredModal() {
+            document.getElementById('passwordNotRequiredModal').style.display = 'none';
+        }
         
         function escapeHtml(text) {
             if (!text) return '';
@@ -847,11 +977,15 @@ $htmlContent = @"
         window.onclick = function(event) {
             const tier0Modal = document.getElementById('tier0Modal');
             const staleModal = document.getElementById('staleAccountsModal');
+            const passwordModal = document.getElementById('passwordNotRequiredModal');
             if (event.target === tier0Modal) {
                 closeTier0Modal();
             }
             if (event.target === staleModal) {
                 closeStaleAccountsModal();
+            }
+            if (event.target === passwordModal) {
+                closePasswordNotRequiredModal();
             }
         }
         
@@ -860,6 +994,7 @@ $htmlContent = @"
             if (event.key === 'Escape') {
                 closeTier0Modal();
                 closeStaleAccountsModal();
+                closePasswordNotRequiredModal();
             }
         });
     </script>
@@ -883,6 +1018,7 @@ try {
     Write-Host "  Enabled Tier 0 Objects: $($metrics.EnabledTier0Objects)" -ForegroundColor Yellow
     Write-Host "  Disabled Tier 0 Objects: $($metrics.DisabledTier0Objects)" -ForegroundColor Yellow
     Write-Host "  Stale Accounts (180+ days): $($metrics.StaleAccountsCount)" -ForegroundColor Red
+    Write-Host "  Accounts with PasswordNotRequired flag (enabled): $($metrics.PasswordNotRequiredAccountsCount)" -ForegroundColor Red
 } catch {
     Write-Error "Error saving report: $($_.Exception.Message)"
     exit 1

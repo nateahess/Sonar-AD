@@ -27,6 +27,7 @@ A simple PowerShell script to quickly grab and format high level Active Director
   - Displays last logon timestamp
   - Shows days since last logon
   - Helps identify accounts that may need review or removal
+- **Accounts with Password Not Required**: Identifies accounts that have the "PasswordNotRequired" flag set
 
 ### Interactive HTML Report
 - Interactive modals for detailed views on Tier 0 and Stale objects (more to come)
