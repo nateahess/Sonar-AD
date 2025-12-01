@@ -834,7 +834,7 @@ $htmlContent = @"
             const hours = pad(now.getHours());
             const minutes = pad(now.getMinutes());
             const seconds = pad(now.getSeconds());
-            return `${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+            return year + '-' + month + '-' + day + '-' + hours + minutes + seconds;
         }
 
         function exportToCSV(rows, columns, filenamePrefix) {
@@ -844,7 +844,7 @@ $htmlContent = @"
             }
 
             const timestamp = getTimestamp();
-            const filename = `${filenamePrefix}-${timestamp}.csv`;
+            const filename = filenamePrefix + '-' + timestamp + '.csv';
 
             const escapeCell = (value) => {
                 if (value === null || value === undefined) {
@@ -853,7 +853,7 @@ $htmlContent = @"
                 let text = value.toString();
                 // Escape double quotes by doubling them
                 text = text.replace(/"/g, '""');
-                return `"${text}"`;
+                return '"' + text + '"';
             };
 
             const headerRow = columns.map(col => escapeCell(col.header)).join(',');
@@ -966,7 +966,7 @@ $htmlContent = @"
                     { key: 'Enabled', header: 'Enabled' },
                     { key: 'Groups', header: 'Groups' }
                 ],
-                `tier0-${filterLabel}-accounts`
+                'tier0-' + filterLabel + '-accounts'
             );
         }
         
