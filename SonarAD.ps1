@@ -491,6 +491,30 @@ $htmlContent = @"
             font-size: 1.5em;
             font-weight: 600;
         }
+
+        .modal-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn {
+            background-color: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+        }
+
+        .export-btn:hover {
+            background-color: rgba(255, 255, 255, 0.22);
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+            transform: translateY(-1px);
+        }
         
         .close {
             color: white;
@@ -718,7 +742,10 @@ $htmlContent = @"
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Tier 0 Objects</h2>
-                <span class="close" onclick="closeTier0Modal()">&times;</span>
+                <div class="modal-header-actions">
+                    <button class="export-btn" onclick="exportTier0ToCSV()">Export CSV</button>
+                    <span class="close" onclick="closeTier0Modal()">&times;</span>
+                </div>
             </div>
             <div class="modal-body">
                 <ul id="userList" class="user-list"></ul>
@@ -731,7 +758,10 @@ $htmlContent = @"
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
                 <h2 id="staleModalTitle">Stale Accounts</h2>
-                <span class="close" onclick="closeStaleAccountsModal()">&times;</span>
+                <div class="modal-header-actions">
+                    <button class="export-btn" onclick="exportStaleAccountsToCSV()">Export CSV</button>
+                    <span class="close" onclick="closeStaleAccountsModal()">&times;</span>
+                </div>
             </div>
             <div class="modal-body">
                 <ul id="staleAccountList" class="user-list"></ul>
@@ -744,7 +774,10 @@ $htmlContent = @"
         <div class="modal-content">
             <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
                 <h2 id="passwordNotRequiredModalTitle">Accounts with Password Not Required</h2>
-                <span class="close" onclick="closePasswordNotRequiredModal()">&times;</span>
+                <div class="modal-header-actions">
+                    <button class="export-btn" onclick="exportPasswordNotRequiredToCSV()">Export CSV</button>
+                    <span class="close" onclick="closePasswordNotRequiredModal()">&times;</span>
+                </div>
             </div>
             <div class="modal-body">
                 <ul id="passwordNotRequiredList" class="user-list"></ul>
@@ -788,6 +821,58 @@ $htmlContent = @"
             console.error('Error parsing passwordNotRequiredAccounts:', e);
             passwordNotRequiredAccounts = [];
         }
+
+        // Track current Tier 0 filter for CSV export
+        let currentTier0Filter = 'all';
+
+        function getTimestamp() {
+            const now = new Date();
+            const pad = (n) => n.toString().padStart(2, '0');
+            const year = now.getFullYear();
+            const month = pad(now.getMonth() + 1);
+            const day = pad(now.getDate());
+            const hours = pad(now.getHours());
+            const minutes = pad(now.getMinutes());
+            const seconds = pad(now.getSeconds());
+            return `${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+        }
+
+        function exportToCSV(rows, columns, filenamePrefix) {
+            if (!Array.isArray(rows) || rows.length === 0) {
+                alert('No data to export.');
+                return;
+            }
+
+            const timestamp = getTimestamp();
+            const filename = `${filenamePrefix}-${timestamp}.csv`;
+
+            const escapeCell = (value) => {
+                if (value === null || value === undefined) {
+                    value = '';
+                }
+                let text = value.toString();
+                // Escape double quotes by doubling them
+                text = text.replace(/"/g, '""');
+                return `"${text}"`;
+            };
+
+            const headerRow = columns.map(col => escapeCell(col.header)).join(',');
+            const dataRows = rows.map(row => {
+                return columns.map(col => escapeCell(row[col.key])).join(',');
+            });
+
+            const csvContent = '\uFEFF' + [headerRow, ...dataRows].join('\r\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
         
         function showTier0Modal(filter) {
             const modal = document.getElementById('tier0Modal');
@@ -802,6 +887,9 @@ $htmlContent = @"
             } else {
                 modalTitle.textContent = 'All Tier 0 Objects';
             }
+
+            // Track current filter for CSV export
+            currentTier0Filter = filter || 'all';
             
             // Filter users
             let filteredUsers = tier0Users;
@@ -850,6 +938,36 @@ $htmlContent = @"
         
         function closeTier0Modal() {
             document.getElementById('tier0Modal').style.display = 'none';
+        }
+
+        function exportTier0ToCSV() {
+            let filteredUsers = tier0Users;
+            if (currentTier0Filter === 'enabled') {
+                filteredUsers = tier0Users.filter(user => user.Enabled === true);
+            } else if (currentTier0Filter === 'disabled') {
+                filteredUsers = tier0Users.filter(user => user.Enabled === false);
+            }
+
+            const rows = filteredUsers.map(user => ({
+                DisplayName: user.DisplayName || user.Name || '',
+                Name: user.Name || '',
+                SamAccountName: user.SamAccountName || '',
+                Enabled: user.Enabled ? 'True' : 'False',
+                Groups: user.Groups || ''
+            }));
+
+            const filterLabel = currentTier0Filter || 'all';
+            exportToCSV(
+                rows,
+                [
+                    { key: 'DisplayName', header: 'DisplayName' },
+                    { key: 'Name', header: 'Name' },
+                    { key: 'SamAccountName', header: 'SamAccountName' },
+                    { key: 'Enabled', header: 'Enabled' },
+                    { key: 'Groups', header: 'Groups' }
+                ],
+                `tier0-${filterLabel}-accounts`
+            );
         }
         
         function showStaleAccountsModal() {
@@ -959,6 +1077,58 @@ $htmlContent = @"
 
         function closePasswordNotRequiredModal() {
             document.getElementById('passwordNotRequiredModal').style.display = 'none';
+        }
+
+        function exportStaleAccountsToCSV() {
+            if (!Array.isArray(staleAccounts)) {
+                console.error('staleAccounts is not properly initialized');
+                alert('No data to export.');
+                return;
+            }
+
+            const rows = staleAccounts.map(account => ({
+                DisplayName: account.DisplayName || account.Name || '',
+                Name: account.Name || '',
+                SamAccountName: account.SamAccountName || '',
+                LastLogonTimeStamp: account.LastLogonTimeStamp || '',
+                DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : ''
+            }));
+
+            exportToCSV(
+                rows,
+                [
+                    { key: 'DisplayName', header: 'DisplayName' },
+                    { key: 'Name', header: 'Name' },
+                    { key: 'SamAccountName', header: 'SamAccountName' },
+                    { key: 'LastLogonTimeStamp', header: 'LastLogonTimeStamp' },
+                    { key: 'DaysSinceLogon', header: 'DaysSinceLogon' }
+                ],
+                'stale-accounts'
+            );
+        }
+
+        function exportPasswordNotRequiredToCSV() {
+            if (!Array.isArray(passwordNotRequiredAccounts)) {
+                console.error('passwordNotRequiredAccounts is not properly initialized');
+                alert('No data to export.');
+                return;
+            }
+
+            const rows = passwordNotRequiredAccounts.map(account => ({
+                DisplayName: account.DisplayName || account.Name || '',
+                Name: account.Name || '',
+                SamAccountName: account.SamAccountName || ''
+            }));
+
+            exportToCSV(
+                rows,
+                [
+                    { key: 'DisplayName', header: 'DisplayName' },
+                    { key: 'Name', header: 'Name' },
+                    { key: 'SamAccountName', header: 'SamAccountName' }
+                ],
+                'password-not-required-accounts'
+            );
         }
         
         function escapeHtml(text) {
