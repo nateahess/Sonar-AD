@@ -809,6 +809,12 @@ $htmlContent = @"
             staleAccounts = [];
         }
 
+        // Debug logging to understand the data structure
+        console.log('Stale Accounts Data:', staleAccounts);
+        if (staleAccounts.length > 0) {
+            console.log('First account sample:', staleAccounts[0]);
+        }
+
         // PasswordNotRequired account data embedded from PowerShell (base64 encoded)
         let passwordNotRequiredAccounts = [];
         try {
@@ -999,16 +1005,38 @@ $htmlContent = @"
                 sortedAccounts.forEach(account => {
                     const li = document.createElement('li');
                     li.className = 'user-item';
-                    
+
                     // Determine days text - check if DaysSinceLogon is 'N/A' or null/undefined
                     let daysText = 'Never logged in';
-                    if (account.DaysSinceLogon !== 'N/A' && account.DaysSinceLogon !== null && account.DaysSinceLogon !== undefined) {
+                    let daysCalculated = false;
+
+                    // First, try to use DaysSinceLogon if it's a valid number
+                    if (account.DaysSinceLogon !== 'N/A' && account.DaysSinceLogon !== null && account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== '') {
                         const days = parseInt(account.DaysSinceLogon);
-                        if (!isNaN(days)) {
+                        if (!isNaN(days) && days >= 0) {
                             daysText = days + ' days ago';
+                            daysCalculated = true;
                         }
                     }
-                    
+
+                    // Fallback: if we have a LastLogonTimeStamp that's not "Never", calculate days from it
+                    if (!daysCalculated && account.LastLogonTimeStamp && account.LastLogonTimeStamp !== 'Never' && account.LastLogonTimeStamp !== '') {
+                        try {
+                            const logonDate = new Date(account.LastLogonTimeStamp);
+                            if (!isNaN(logonDate.getTime())) {
+                                const now = new Date();
+                                const diffDays = Math.floor((now - logonDate) / (1000 * 60 * 60 * 24));
+                                if (diffDays >= 0) {
+                                    daysText = diffDays + ' days ago';
+                                    daysCalculated = true;
+                                }
+                            }
+                        } catch (e) {
+                            // Keep "Never logged in" if date parsing fails
+                            console.warn('Failed to parse date for account:', account.SamAccountName, e);
+                        }
+                    }
+
                     // Get last logon text - use LastLogonTimeStamp if available, otherwise show "Never"
                     let lastLogonText = 'Never';
                     if (account.LastLogonTimeStamp && account.LastLogonTimeStamp !== 'Never') {
