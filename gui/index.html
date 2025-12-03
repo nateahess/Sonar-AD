@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonarAD - Active Directory Reporting</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>Sonar AD</h1>
+                <p class="subtitle">Active Directory Reporting Tool</p>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="info-card">
+                <div class="info-section">
+                    <label class="info-label">Connected Domain</label>
+                    <div id="domainDisplay" class="domain-display">
+                        <div class="loading-spinner"></div>
+                        <span>Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-section">
+                <button id="generateBtn" class="generate-btn" disabled>
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="btn-text">Generate Report</span>
+                </button>
+            </div>
+
+            <div class="console-section">
+                <div class="console-header">
+                    <span class="console-title">Console Output</span>
+                    <button id="clearConsoleBtn" class="clear-console-btn">Clear</button>
+                </div>
+                <div id="console" class="console-output"></div>
+            </div>
+
+            <div id="statusMessage" class="status-message hidden"></div>
+        </main>
+
+        <footer class="footer">
+            <p>SonarAD v1.0.0 | Created by @nateahess</p>
+        </footer>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{
+  "name": "sonarad-gui",
+  "version": "1.0.0",
+  "description": "GUI for SonarAD Active Directory Reporting Tool",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win"
+  },
+  "keywords": [
+    "active-directory",
+    "reporting",
+    "sonarad"
+  ],
+  "author": "@nateahess",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.sonarad.app",
+    "productName": "SonarAD",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SonarAD"
+    },
+    "files": [
+      "**/*",
+      "!dist/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "../SonarAD.ps1",
+        "to": "SonarAD.ps1"
+      }
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    }
+  }
+}

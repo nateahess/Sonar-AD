@@ -1,0 +1,333 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #2c2c2c 0%, rgb(30, 31, 31) 100%);
+    color: #ffffff;
+    overflow: hidden;
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.46) 0%, rgba(84, 228, 192, 0.979) 100%);
+    padding: 30px 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header-content h1 {
+    font-size: 2.2em;
+    font-weight: 800;
+    margin-bottom: 5px;
+    color: #ffffff;
+}
+
+.subtitle {
+    font-size: 1em;
+    opacity: 0.95;
+    color: #ffffff;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+}
+
+/* Info Card */
+.info-card {
+    background: rgb(15, 56, 51);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-label {
+    font-size: 0.85em;
+    color: #55eeda;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+}
+
+.domain-display {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 18px 20px;
+    background: rgb(36, 34, 34);
+    border-radius: 8px;
+    border: 2px solid #333;
+    font-size: 1.2em;
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.domain-display.loaded {
+    border-color: #39fcdb;
+    box-shadow: 0 0 15px rgba(57, 252, 219, 0.2);
+}
+
+.domain-display.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.2);
+}
+
+.domain-icon {
+    width: 28px;
+    height: 28px;
+    stroke: #39fcdb;
+    flex-shrink: 0;
+}
+
+.domain-icon.error {
+    stroke: #dc3545;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #333;
+    border-top-color: #39fcdb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Action Section */
+.action-section {
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: center;
+}
+
+.generate-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 40px;
+    background: linear-gradient(135deg, #39fcdb 0%, #55eeda 100%);
+    color: #1a1a1a;
+    font-size: 1.1em;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(57, 252, 219, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.generate-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(57, 252, 219, 0.5);
+}
+
+.generate-btn:active:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.generate-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.generate-btn.loading .btn-icon {
+    animation: spin 1s linear infinite;
+}
+
+.btn-icon {
+    width: 24px;
+    height: 24px;
+}
+
+/* Console Section */
+.console-section {
+    background: rgb(15, 56, 51);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+}
+
+.console-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid #333;
+}
+
+.console-title {
+    font-size: 0.9em;
+    color: #55eeda;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.clear-console-btn {
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clear-console-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #777;
+}
+
+.console-output {
+    height: 200px;
+    overflow-y: auto;
+    padding: 15px 20px;
+    background: #1a1a1a;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.85em;
+    line-height: 1.5;
+}
+
+.console-entry {
+    margin-bottom: 8px;
+    word-wrap: break-word;
+}
+
+.console-timestamp {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.console-info {
+    color: #e0e0e0;
+}
+
+.console-success {
+    color: #39fcdb;
+}
+
+.console-warning {
+    color: #ffc107;
+}
+
+.console-error {
+    color: #dc3545;
+}
+
+/* Status Message */
+.status-message {
+    padding: 15px 20px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 20px;
+    animation: slideIn 0.3s ease;
+}
+
+.status-message.hidden {
+    display: none;
+}
+
+.status-success {
+    background: rgba(57, 252, 219, 0.15);
+    border: 1px solid #39fcdb;
+    color: #39fcdb;
+}
+
+.status-error {
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid #dc3545;
+    color: #dc3545;
+}
+
+.status-info {
+    background: rgba(85, 238, 218, 0.15);
+    border: 1px solid #55eeda;
+    color: #55eeda;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Footer */
+.footer {
+    padding: 15px 40px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid #333;
+    font-size: 0.85em;
+    color: #888;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #39fcdb;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #55eeda;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header {
+        padding: 20px 25px;
+    }
+
+    .header-content h1 {
+        font-size: 1.6em;
+    }
+
+    .main-content {
+        padding: 20px 25px;
+    }
+
+    .generate-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
