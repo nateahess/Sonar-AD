@@ -1043,14 +1043,23 @@ $htmlContent = @"
                         lastLogonText = account.LastLogonTimeStamp;
                     }
                     
-                    li.innerHTML = 
+                    // Build the Last Logon text with relative time if available
+                    let lastLogonDisplay = escapeHtml(lastLogonText);
+                    if (lastLogonText !== 'Never' && account.DaysSinceLogon !== 'N/A' && account.DaysSinceLogon !== null && account.DaysSinceLogon !== undefined) {
+                        const days = parseInt(account.DaysSinceLogon);
+                        if (!isNaN(days)) {
+                            lastLogonDisplay += ' (' + days + ' days ago)';
+                        }
+                    }
+
+                    li.innerHTML =
                         '<div class="user-name">' +
                             escapeHtml(account.DisplayName || account.Name || 'N/A') +
                             '<span class="status-badge" style="background: #f8d7da; color: #721c24;">' + daysText + '</span>' +
                         '</div>' +
                         '<div class="user-details">' +
                             '<span><strong>Account:</strong> ' + escapeHtml(account.SamAccountName || 'N/A') + '</span>' +
-                            '<span><strong>Last Logon:</strong> ' + escapeHtml(lastLogonText) + '</span>' +
+                            '<span><strong>Last Logon:</strong> ' + lastLogonDisplay + '</span>' +
                         '</div>';
                     accountList.appendChild(li);
                 });
