@@ -138,8 +138,8 @@ try {
     $staleThreshold = (Get-Date).AddDays(-180)
     
     try {
-        # Get all enabled users with LastLogonDate property
-        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
+        # Get all enabled users with LastLogonTimeStamp property (PowerShell automatically calculates LastLogonDate from this)
+        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonTimeStamp, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
         
         foreach ($user in $allUsers) {
             # Check if LastLogonDate exists and is older than threshold
