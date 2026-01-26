@@ -138,47 +138,70 @@ try {
     $staleThreshold = (Get-Date).AddDays(-180)
     
     try {
-        # Get all enabled users with LastLogonTimeStamp property (PowerShell automatically calculates LastLogonDate from this)
-        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonTimeStamp, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
+        # Get all enabled users with LastLogonDate property
+        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
         
         foreach ($user in $allUsers) {
-            # Check if LastLogonDate exists and is older than threshold
-            # LastLogonDate is already a DateTime object or $null
-            $isStale = $false
-            $lastLogon = $null
-            $daysSinceLogon = "N/A"
-            
-            if ($user.LastLogonDate) {
-                $lastLogon = $user.LastLogonDate
-                if ($lastLogon -lt $staleThreshold) {
-                    $isStale = $true
-                    $daysSinceLogon = [math]::Round((Get-Date - $lastLogon).TotalDays, 0)
-                } else {
-                    # Not stale, skip this user
-                    $isStale = $false
-                }
-            } else {
-                # LastLogonDate is null, consider it stale (never logged in)
-                $isStale = $true
+            try {
+                # Check if LastLogonDate exists and is older than threshold
+                # LastLogonDate is already a DateTime object or $null
+                $isStale = $false
                 $lastLogon = $null
                 $daysSinceLogon = "N/A"
-            }
-            
-            if ($isStale) {
-                # Format the last logon date
-                $lastLogonFormatted = "Never"
-                if ($null -ne $lastLogon -and $lastLogon -is [DateTime]) {
-                    $lastLogonFormatted = $lastLogon.ToString("yyyy-MM-dd HH:mm:ss")
+
+                # Check if LastLogonDate exists and is a valid DateTime
+                if ($null -ne $user.LastLogonDate -and $user.LastLogonDate -is [DateTime]) {
+                    $lastLogon = $user.LastLogonDate
+
+                    # Perform date comparison safely
+                    try {
+                        if ($lastLogon -lt $staleThreshold) {
+                            $isStale = $true
+                            # Calculate days since logon
+                            $timeSpan = (Get-Date) - $lastLogon
+                            $daysSinceLogon = [math]::Round($timeSpan.TotalDays, 0)
+                        } else {
+                            # Not stale, skip this user
+                            $isStale = $false
+                        }
+                    } catch {
+                        Write-Verbose "Could not compare dates for user $($user.SamAccountName): $($_.Exception.Message)"
+                        # Treat as stale if date comparison fails
+                        $isStale = $true
+                        $lastLogon = $null
+                        $daysSinceLogon = "N/A"
+                    }
+                } else {
+                    # LastLogonDate is null or invalid, consider it stale (never logged in)
+                    $isStale = $true
+                    $lastLogon = $null
+                    $daysSinceLogon = "N/A"
                 }
-                
-                $staleAccountDetails += @{
-                    SamAccountName = $user.SamAccountName
-                    DisplayName = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
-                    Name = $user.Name
-                    Enabled = $user.Enabled
-                    LastLogonDate = $lastLogonFormatted
-                    DaysSinceLogon = $daysSinceLogon
+
+                if ($isStale) {
+                    # Format the last logon date
+                    $lastLogonFormatted = "Never"
+                    if ($null -ne $lastLogon -and $lastLogon -is [DateTime]) {
+                        try {
+                            $lastLogonFormatted = $lastLogon.ToString("yyyy-MM-dd HH:mm:ss")
+                        } catch {
+                            $lastLogonFormatted = "Invalid Date"
+                        }
+                    }
+
+                    $staleAccountDetails += @{
+                        SamAccountName = $user.SamAccountName
+                        DisplayName = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
+                        Name = $user.Name
+                        Enabled = $user.Enabled
+                        LastLogonDate = $lastLogonFormatted
+                        DaysSinceLogon = $daysSinceLogon
+                    }
                 }
+            } catch {
+                # Log error for this specific user and continue
+                Write-Verbose "Error processing user $($user.SamAccountName): $($_.Exception.Message)"
+                continue
             }
         }
         
