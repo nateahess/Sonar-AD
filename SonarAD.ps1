@@ -132,56 +132,40 @@ try {
     $metrics.DisabledTier0Objects = $tier0Disabled
     $metrics.Tier0UserDetails = $tier0UserDetails
 
-    # Get Stale Accounts (LastLogonTimeStamp older than 180 days)
+    # Get Stale Accounts (LastLogonDate older than 180 days)
     Write-Host "  - Identifying stale accounts (180+ days since last logon)..." -ForegroundColor Gray
     $staleAccountDetails = @()
     $staleThreshold = (Get-Date).AddDays(-180)
     
     try {
-        # Get all enabled users with LastLogonTimeStamp property
-        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonTimeStamp, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
+        # Get all enabled users with LastLogonDate property
+        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
         
         foreach ($user in $allUsers) {
-            # Check if LastLogonTimeStamp exists and is older than threshold
-            # LastLogonTimeStamp can be null, 0, or a valid FileTime
+            # Check if LastLogonDate exists and is older than threshold
+            # LastLogonDate is already a DateTime object or $null
             $isStale = $false
             $lastLogon = $null
             $daysSinceLogon = "N/A"
             
-            if ($user.LastLogonTimeStamp -and $user.LastLogonTimeStamp -ne 0) {
-                try {
-                    $lastLogon = [DateTime]::FromFileTime($user.LastLogonTimeStamp)
-                    # Check if the date is valid (not the epoch date)
-                    if ($lastLogon -and $lastLogon.Year -gt 1601) {
-                        if ($lastLogon -lt $staleThreshold) {
-                            $isStale = $true
-                            $daysSinceLogon = [math]::Round((Get-Date - $lastLogon).TotalDays, 0)
-                            # Keep $lastLogon set so we can use it in the output
-                        } else {
-                            # Not stale, skip this user
-                            $isStale = $false
-                        }
-                    } else {
-                        # Invalid date, treat as never logged in
-                        $isStale = $true
-                        $lastLogon = $null
-                        $daysSinceLogon = "N/A"
-                    }
-                } catch {
-                    # Error converting FileTime, treat as never logged in
+            if ($user.LastLogonDate) {
+                $lastLogon = $user.LastLogonDate
+                if ($lastLogon -lt $staleThreshold) {
                     $isStale = $true
-                    $lastLogon = $null
-                    $daysSinceLogon = "N/A"
+                    $daysSinceLogon = [math]::Round((Get-Date - $lastLogon).TotalDays, 0)
+                } else {
+                    # Not stale, skip this user
+                    $isStale = $false
                 }
             } else {
-                # LastLogonTimeStamp is null or 0, consider it stale (never logged in)
+                # LastLogonDate is null, consider it stale (never logged in)
                 $isStale = $true
                 $lastLogon = $null
                 $daysSinceLogon = "N/A"
             }
             
             if ($isStale) {
-                # Format the last logon timestamp
+                # Format the last logon date
                 $lastLogonFormatted = "Never"
                 if ($null -ne $lastLogon -and $lastLogon -is [DateTime]) {
                     $lastLogonFormatted = $lastLogon.ToString("yyyy-MM-dd HH:mm:ss")
@@ -192,7 +176,7 @@ try {
                     DisplayName = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
                     Name = $user.Name
                     Enabled = $user.Enabled
-                    LastLogonTimeStamp = $lastLogonFormatted
+                    LastLogonDate = $lastLogonFormatted
                     DaysSinceLogon = $daysSinceLogon
                 }
             }
@@ -1019,10 +1003,10 @@ $htmlContent = @"
                         }
                     }
 
-                    // Fallback: if we have a LastLogonTimeStamp that's not "Never", calculate days from it
-                    if (!daysCalculated && account.LastLogonTimeStamp && account.LastLogonTimeStamp !== 'Never' && account.LastLogonTimeStamp !== '') {
+                    // Fallback: if we have a LastLogonDate that's not "Never", calculate days from it
+                    if (!daysCalculated && account.LastLogonDate && account.LastLogonDate !== 'Never' && account.LastLogonDate !== '') {
                         try {
-                            const logonDate = new Date(account.LastLogonTimeStamp);
+                            const logonDate = new Date(account.LastLogonDate);
                             if (!isNaN(logonDate.getTime())) {
                                 const now = new Date();
                                 const diffDays = Math.floor((now - logonDate) / (1000 * 60 * 60 * 24));
@@ -1036,11 +1020,11 @@ $htmlContent = @"
                             console.warn('Failed to parse date for account:', account.SamAccountName, e);
                         }
                     }
-
-                    // Get last logon text - use LastLogonTimeStamp if available, otherwise show "Never"
+                    
+                    // Get last logon text - use LastLogonDate if available, otherwise show "Never"
                     let lastLogonText = 'Never';
-                    if (account.LastLogonTimeStamp && account.LastLogonTimeStamp !== 'Never') {
-                        lastLogonText = account.LastLogonTimeStamp;
+                    if (account.LastLogonDate && account.LastLogonDate !== 'Never') {
+                        lastLogonText = account.LastLogonDate;
                     }
                     
                     // Build the Last Logon text with relative time if available
@@ -1127,7 +1111,7 @@ $htmlContent = @"
                 DisplayName: account.DisplayName || account.Name || '',
                 Name: account.Name || '',
                 SamAccountName: account.SamAccountName || '',
-                LastLogonTimeStamp: account.LastLogonTimeStamp || '',
+                LastLogonDate: account.LastLogonDate || '',
                 DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : ''
             }));
 
@@ -1137,7 +1121,7 @@ $htmlContent = @"
                     { key: 'DisplayName', header: 'DisplayName' },
                     { key: 'Name', header: 'Name' },
                     { key: 'SamAccountName', header: 'SamAccountName' },
-                    { key: 'LastLogonTimeStamp', header: 'LastLogonTimeStamp' },
+                    { key: 'LastLogonDate', header: 'LastLogonDate' },
                     { key: 'DaysSinceLogon', header: 'DaysSinceLogon' }
                 ],
                 'stale-accounts'
