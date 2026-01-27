@@ -145,6 +145,9 @@ try {
         # Get all enabled users with LastLogonDate property
         $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled, PasswordLastSet, PasswordExpired -ErrorAction Stop
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -1135,9 +1138,12 @@ $htmlContent = @"
                 SamAccountName: account.SamAccountName || '',
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 LastLogonTimeStamp: account.LastLogonTimeStamp || '',
                 DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : ''
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
                 LastLogonDate: account.LastLogonDate || '',
@@ -1145,6 +1151,9 @@ $htmlContent = @"
                 PasswordLastSet: account.PasswordLastSet || '',
                 PasswordExpired: account.PasswordExpired === true ? 'True' : account.PasswordExpired === false ? 'False' : ''
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -1158,9 +1167,12 @@ $htmlContent = @"
                     { key: 'SamAccountName', header: 'SamAccountName' },
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     { key: 'LastLogonTimeStamp', header: 'LastLogonTimeStamp' },
                     { key: 'DaysSinceLogon', header: 'DaysSinceLogon' }
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
                     { key: 'LastLogonDate', header: 'LastLogonDate' },
@@ -1168,6 +1180,9 @@ $htmlContent = @"
                     { key: 'PasswordLastSet', header: 'PasswordLastSet' },
                     { key: 'PasswordExpired', header: 'PasswordExpired' }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
