@@ -139,7 +139,7 @@ try {
     
     try {
         # Get all enabled users with LastLogonDate property
-        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
+        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled, PasswordLastSet, PasswordExpired -ErrorAction Stop
         
         foreach ($user in $allUsers) {
             try {
@@ -189,6 +189,16 @@ try {
                         }
                     }
 
+                    # Format the password last set date
+                    $passwordLastSetFormatted = "Never"
+                    if ($null -ne $user.PasswordLastSet -and $user.PasswordLastSet -is [DateTime]) {
+                        try {
+                            $passwordLastSetFormatted = $user.PasswordLastSet.ToString("yyyy-MM-dd HH:mm:ss")
+                        } catch {
+                            $passwordLastSetFormatted = "Invalid Date"
+                        }
+                    }
+
                     $staleAccountDetails += @{
                         SamAccountName = $user.SamAccountName
                         DisplayName = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
@@ -196,6 +206,8 @@ try {
                         Enabled = $user.Enabled
                         LastLogonDate = $lastLogonFormatted
                         DaysSinceLogon = $daysSinceLogon
+                        PasswordLastSet = $passwordLastSetFormatted
+                        PasswordExpired = $user.PasswordExpired
                     }
                 }
             } catch {
@@ -1135,7 +1147,9 @@ $htmlContent = @"
                 Name: account.Name || '',
                 SamAccountName: account.SamAccountName || '',
                 LastLogonDate: account.LastLogonDate || '',
-                DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : ''
+                DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : '',
+                PasswordLastSet: account.PasswordLastSet || '',
+                PasswordExpired: account.PasswordExpired === true ? 'True' : account.PasswordExpired === false ? 'False' : ''
             }));
 
             exportToCSV(
@@ -1145,7 +1159,9 @@ $htmlContent = @"
                     { key: 'Name', header: 'Name' },
                     { key: 'SamAccountName', header: 'SamAccountName' },
                     { key: 'LastLogonDate', header: 'LastLogonDate' },
-                    { key: 'DaysSinceLogon', header: 'DaysSinceLogon' }
+                    { key: 'DaysSinceLogon', header: 'DaysSinceLogon' },
+                    { key: 'PasswordLastSet', header: 'PasswordLastSet' },
+                    { key: 'PasswordExpired', header: 'PasswordExpired' }
                 ],
                 'stale-accounts'
             );
