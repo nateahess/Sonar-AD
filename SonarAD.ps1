@@ -144,6 +144,9 @@ try {
 =======
         # Get all enabled users with LastLogonDate property
         $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled, PasswordLastSet, PasswordExpired -ErrorAction Stop
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         
         foreach ($user in $allUsers) {
@@ -1131,13 +1134,19 @@ $htmlContent = @"
                 Name: account.Name || '',
                 SamAccountName: account.SamAccountName || '',
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 LastLogonTimeStamp: account.LastLogonTimeStamp || '',
                 DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : ''
 =======
+=======
+>>>>>>> Stashed changes
                 LastLogonDate: account.LastLogonDate || '',
                 DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : '',
                 PasswordLastSet: account.PasswordLastSet || '',
                 PasswordExpired: account.PasswordExpired === true ? 'True' : account.PasswordExpired === false ? 'False' : ''
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
             }));
 
@@ -1148,13 +1157,19 @@ $htmlContent = @"
                     { key: 'Name', header: 'Name' },
                     { key: 'SamAccountName', header: 'SamAccountName' },
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                     { key: 'LastLogonTimeStamp', header: 'LastLogonTimeStamp' },
                     { key: 'DaysSinceLogon', header: 'DaysSinceLogon' }
 =======
+=======
+>>>>>>> Stashed changes
                     { key: 'LastLogonDate', header: 'LastLogonDate' },
                     { key: 'DaysSinceLogon', header: 'DaysSinceLogon' },
                     { key: 'PasswordLastSet', header: 'PasswordLastSet' },
                     { key: 'PasswordExpired', header: 'PasswordExpired' }
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                 ],
                 'stale-accounts'
