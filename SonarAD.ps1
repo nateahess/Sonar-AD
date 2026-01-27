@@ -138,8 +138,13 @@ try {
     $staleThreshold = (Get-Date).AddDays(-180)
     
     try {
+<<<<<<< Updated upstream
         # Get all enabled users with LastLogonTimeStamp property
         $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonTimeStamp, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
+=======
+        # Get all enabled users with LastLogonDate property
+        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled, PasswordLastSet, PasswordExpired -ErrorAction Stop
+>>>>>>> Stashed changes
         
         foreach ($user in $allUsers) {
             # Check if LastLogonTimeStamp exists and is older than threshold
@@ -173,6 +178,7 @@ try {
                     $lastLogon = $null
                     $daysSinceLogon = "N/A"
                 }
+<<<<<<< Updated upstream
             } else {
                 # LastLogonTimeStamp is null or 0, consider it stale (never logged in)
                 $isStale = $true
@@ -194,6 +200,40 @@ try {
                     Enabled = $user.Enabled
                     LastLogonTimeStamp = $lastLogonFormatted
                     DaysSinceLogon = $daysSinceLogon
+=======
+
+                if ($isStale) {
+                    # Format the last logon date
+                    $lastLogonFormatted = "Never"
+                    if ($null -ne $lastLogon -and $lastLogon -is [DateTime]) {
+                        try {
+                            $lastLogonFormatted = $lastLogon.ToString("yyyy-MM-dd HH:mm:ss")
+                        } catch {
+                            $lastLogonFormatted = "Invalid Date"
+                        }
+                    }
+
+                    # Format the password last set date
+                    $passwordLastSetFormatted = "Never"
+                    if ($null -ne $user.PasswordLastSet -and $user.PasswordLastSet -is [DateTime]) {
+                        try {
+                            $passwordLastSetFormatted = $user.PasswordLastSet.ToString("yyyy-MM-dd HH:mm:ss")
+                        } catch {
+                            $passwordLastSetFormatted = "Invalid Date"
+                        }
+                    }
+
+                    $staleAccountDetails += @{
+                        SamAccountName = $user.SamAccountName
+                        DisplayName = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
+                        Name = $user.Name
+                        Enabled = $user.Enabled
+                        LastLogonDate = $lastLogonFormatted
+                        DaysSinceLogon = $daysSinceLogon
+                        PasswordLastSet = $passwordLastSetFormatted
+                        PasswordExpired = $user.PasswordExpired
+                    }
+>>>>>>> Stashed changes
                 }
             }
         }
@@ -1090,8 +1130,15 @@ $htmlContent = @"
                 DisplayName: account.DisplayName || account.Name || '',
                 Name: account.Name || '',
                 SamAccountName: account.SamAccountName || '',
+<<<<<<< Updated upstream
                 LastLogonTimeStamp: account.LastLogonTimeStamp || '',
                 DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : ''
+=======
+                LastLogonDate: account.LastLogonDate || '',
+                DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : '',
+                PasswordLastSet: account.PasswordLastSet || '',
+                PasswordExpired: account.PasswordExpired === true ? 'True' : account.PasswordExpired === false ? 'False' : ''
+>>>>>>> Stashed changes
             }));
 
             exportToCSV(
@@ -1100,8 +1147,15 @@ $htmlContent = @"
                     { key: 'DisplayName', header: 'DisplayName' },
                     { key: 'Name', header: 'Name' },
                     { key: 'SamAccountName', header: 'SamAccountName' },
+<<<<<<< Updated upstream
                     { key: 'LastLogonTimeStamp', header: 'LastLogonTimeStamp' },
                     { key: 'DaysSinceLogon', header: 'DaysSinceLogon' }
+=======
+                    { key: 'LastLogonDate', header: 'LastLogonDate' },
+                    { key: 'DaysSinceLogon', header: 'DaysSinceLogon' },
+                    { key: 'PasswordLastSet', header: 'PasswordLastSet' },
+                    { key: 'PasswordExpired', header: 'PasswordExpired' }
+>>>>>>> Stashed changes
                 ],
                 'stale-accounts'
             );
