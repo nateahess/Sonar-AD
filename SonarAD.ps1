@@ -10,7 +10,8 @@ Description: This script collects various Active Directory metrics and generates
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
-    [string]$OutputPath = "ADMetricsReport.html"
+    $date = (Get-Date).ToString("yyyyMMdd"),
+    [string]$OutputPath = "SonarAD-Report-$date.html"
 )
 
 # Check if Active Directory module is available
@@ -139,7 +140,7 @@ try {
     
     try {
         # Get all enabled users with LastLogonDate property
-        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled, PasswordLastSet, PasswordExpired -ErrorAction Stop
+        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Description, EmployeeID, Enabled, PasswordLastSet, PasswordExpired -ErrorAction Stop
         
         foreach ($user in $allUsers) {
             try {
@@ -204,6 +205,7 @@ try {
                         DisplayName = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
                         Name = $user.Name
                         Enabled = $user.Enabled
+                        EmployeeID = $user.EmployeeID
                         LastLogonDate = $lastLogonFormatted
                         DaysSinceLogon = $daysSinceLogon
                         PasswordLastSet = $passwordLastSetFormatted
@@ -229,7 +231,7 @@ try {
     Write-Host "  - Identifying accounts with PasswordNotRequired flag..." -ForegroundColor Gray
     $passwordNotRequiredDetails = @()
     try {
-        $passwordNotRequiredUsers = Get-ADUser -Filter { Enabled -eq $true -and PasswordNotRequired -eq $true } -Properties DisplayName, Name, SamAccountName, Enabled, PasswordNotRequired -ErrorAction Stop
+        $passwordNotRequiredUsers = Get-ADUser -Filter { Enabled -eq $true -and PasswordNotRequired -eq $true } -Properties DisplayName, Name, SamAccountName, Description, EmployeeID, Enabled, PasswordNotRequired -ErrorAction Stop
         
         foreach ($user in $passwordNotRequiredUsers) {
             $passwordNotRequiredDetails += @{
@@ -1146,6 +1148,8 @@ $htmlContent = @"
                 SamAccountName: account.SamAccountName || '',
                 LastLogonDate: account.LastLogonDate || '',
                 DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : '',
+                Description: account.Description || '',
+                EmployeeID: account.EmployeeID || '',
                 PasswordLastSet: account.PasswordLastSet || '',
                 PasswordExpired: account.PasswordExpired === true ? 'True' : account.PasswordExpired === false ? 'False' : ''
             }));
@@ -1157,6 +1161,7 @@ $htmlContent = @"
                     { key: 'Name', header: 'Name' },
                     { key: 'SamAccountName', header: 'SamAccountName' },
                     { key: 'LastLogonDate', header: 'LastLogonDate' },
+                    { key: 'EmployeeID', header: 'EmployeeID'},
                     { key: 'DaysSinceLogon', header: 'DaysSinceLogon' },
                     { key: 'PasswordLastSet', header: 'PasswordLastSet' },
                     { key: 'PasswordExpired', header: 'PasswordExpired' }
