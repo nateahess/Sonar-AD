@@ -139,7 +139,7 @@ try {
     
     try {
         # Get all enabled users with LastLogonDate property
-        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled -ErrorAction Stop
+        $allUsers = Get-ADUser -Filter {Enabled -eq $true} -Properties LastLogonDate, DisplayName, Name, SamAccountName, Enabled, PasswordLastSet, PasswordExpired -ErrorAction Stop
         
         foreach ($user in $allUsers) {
             try {
@@ -189,6 +189,16 @@ try {
                         }
                     }
 
+                    # Format the password last set date
+                    $passwordLastSetFormatted = "Never"
+                    if ($null -ne $user.PasswordLastSet -and $user.PasswordLastSet -is [DateTime]) {
+                        try {
+                            $passwordLastSetFormatted = $user.PasswordLastSet.ToString("yyyy-MM-dd HH:mm:ss")
+                        } catch {
+                            $passwordLastSetFormatted = "Invalid Date"
+                        }
+                    }
+
                     $staleAccountDetails += @{
                         SamAccountName = $user.SamAccountName
                         DisplayName = if ($user.DisplayName) { $user.DisplayName } else { $user.Name }
@@ -196,6 +206,8 @@ try {
                         Enabled = $user.Enabled
                         LastLogonDate = $lastLogonFormatted
                         DaysSinceLogon = $daysSinceLogon
+                        PasswordLastSet = $passwordLastSetFormatted
+                        PasswordExpired = $user.PasswordExpired
                     }
                 }
             } catch {
@@ -294,37 +306,37 @@ $htmlContent = @"
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #2c2c2c 0%,rgb(30, 31, 31) 100%);
+            background: #f5f5f5;
             padding: 20px;
             min-height: 100vh;
         }
-        
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: rgb(15, 56, 51);
+            background: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
         
         .header {
-            background: linear-gradient(135deg,rgba(0, 0, 0, 0.46) 0%,rgba(84, 228, 192, 0.979) 100%);
+            background: #000000;
             color: white;
             padding: 40px;
             text-align: center;
         }
-        
+
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
             font-weight: 800;
             text-align: left;
         }
-        
+
         .header p {
             font-size: 1.1em;
-            opacity: 0.9;
+            opacity: 0.7;
             text-align: left;
         }
         
@@ -335,25 +347,23 @@ $htmlContent = @"
         .info-section {
             margin-bottom: 30px;
             padding: 20px;
-            background: #f8f9fa;
+            background: #fafafa;
             border-radius: 8px;
             border-left: 4px solid #000000;
         }
-        
+
         .info-section h2 {
-            color: #e6c65f;
+            color: #000000;
             margin-bottom: 15px;
             font-size: 1.3em;
             font-weight: 600;
         }
 
-        .info-section h3 { 
-
-            color: #dc3545;
+        .info-section h3 {
+            color: #000000;
             margin-bottom: 15px;
             font-size: 1.3em;
             font-weight: 600;
-
         }
         
         .metrics-grid {
@@ -364,31 +374,31 @@ $htmlContent = @"
         }
         
         .metric-card {
-            background: rgb(36, 34, 34);
+            background: #ffffff;
             border-radius: 8px;
             padding: 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.26);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border-top: 4px solid #39fcdb;
+            border-left: 4px solid #000000;
         }
-        
+
         .metric-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgb(10, 255, 222);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        
+
         .metric-label {
             font-size: 0.9em;
-            color: #55eeda;
+            color: #666666;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 10px;
             font-weight: 600;
         }
-        
+
         .metric-value {
             font-size: 2.5em;
-            color: #ffffff;
+            color: #000000;
             font-weight: 700;
             margin: 10px 0;
         }
@@ -403,58 +413,58 @@ $htmlContent = @"
         }
         
         .tier0-section {
-            background: #202020;
+            background: #fafafa;
             border-left-color: #ffc107;
         }
-        
+
         .tier0-section .metric-card {
-            border-top-color: #ffc107;
+            border-left-color: #ffc107;
         }
-        
+
         .tier0-section .metric-value {
-            color: #fff1c8;
+            color: #ffc107;
         }
-        
+
         .stale-accounts-section {
-            background: #1f1e1e;
+            background: #fafafa;
             border-left-color: #dc3545;
         }
-        
+
         .stale-accounts-section .metric-card {
-            border-top-color: #dc3545;
+            border-left-color: #dc3545;
         }
-        
+
         .stale-accounts-section .metric-value {
-            color: #fdb4b4;
+            color: #dc3545;
         }
 
         .password-not-required-section {
-            background: #222222;
+            background: #fafafa;
             border-left-color: #17a2b8;
         }
 
         .password-not-required-section .metric-card {
-            border-top-color: #17a2b8;
+            border-left-color: #17a2b8;
         }
 
         .password-not-required-section .metric-value {
-            color: #c0f6ff;
+            color: #17a2b8;
         }
         
         .tier0-card, .stale-card, .password-card {
             cursor: pointer;
         }
-        
+
         .tier0-card:hover {
-            background: #414141;
+            background: #f8f8f8;
         }
-        
+
         .stale-card:hover {
-            background: #3f3e3e;
+            background: #f8f8f8;
         }
-        
+
         .password-card:hover {
-            background: #3a4446;
+            background: #f8f8f8;
         }
         
         .modal {
@@ -1135,7 +1145,9 @@ $htmlContent = @"
                 Name: account.Name || '',
                 SamAccountName: account.SamAccountName || '',
                 LastLogonDate: account.LastLogonDate || '',
-                DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : ''
+                DaysSinceLogon: account.DaysSinceLogon !== undefined && account.DaysSinceLogon !== null ? account.DaysSinceLogon : '',
+                PasswordLastSet: account.PasswordLastSet || '',
+                PasswordExpired: account.PasswordExpired === true ? 'True' : account.PasswordExpired === false ? 'False' : ''
             }));
 
             exportToCSV(
@@ -1145,7 +1157,9 @@ $htmlContent = @"
                     { key: 'Name', header: 'Name' },
                     { key: 'SamAccountName', header: 'SamAccountName' },
                     { key: 'LastLogonDate', header: 'LastLogonDate' },
-                    { key: 'DaysSinceLogon', header: 'DaysSinceLogon' }
+                    { key: 'DaysSinceLogon', header: 'DaysSinceLogon' },
+                    { key: 'PasswordLastSet', header: 'PasswordLastSet' },
+                    { key: 'PasswordExpired', header: 'PasswordExpired' }
                 ],
                 'stale-accounts'
             );
